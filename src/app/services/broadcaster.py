@@ -25,7 +25,7 @@ class Broadcaster:
             broadcasting_message: Message | None = None,
             album: list[Message] | None = None,
             batch_size: int = 5000,
-            sleep_seconds: float = 0.05  # Default: 25 messages per second (below API limit)
+            sleep_seconds: float = 0.05  # Default: 20 messages per second (below API limit)
     ):
         """
         Initialize the broadcaster

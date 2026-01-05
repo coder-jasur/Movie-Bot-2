@@ -21,7 +21,7 @@ async def send_database_to_owner(bot: Bot, chat_ids: list[int], db_path: str):
         tasks = [
             asyncio.create_task(
                 bot.send_document(
-                    chat_id=chat_id, document=db_file, caption="📦 DataBase"
+                    chat_id=chat_id, document=db_file, caption="📦 База Данных"
                 )
             )
             for chat_id in chat_ids

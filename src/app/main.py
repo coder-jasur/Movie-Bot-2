@@ -6,7 +6,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram_dialog import setup_dialogs
 
 from logs.logger_conf import setup_logging
-from src.app.common.bot_commands import create_bot_commands
+from src.app.settings.bot_commands import create_bot_commands
 from src.app.common.database_beckup import daily_database_sender
 from src.app.common.database_dsn import construct_postgresql_url
 from src.app.core.config import Settings

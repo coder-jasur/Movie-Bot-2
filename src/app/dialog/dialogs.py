@@ -6,92 +6,205 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Button, SwitchTo, Start, Row, Select, Group
 from aiogram_dialog.widgets.text import Const, Format, Case
 
-from src.app.dialog.geters import op_menu_getter, channel_info_getter, add_chanenl_getter
-from src.app.dialog.handlers import (
-    add_channel_input, get_channel_info, on_delete_channel,
-    on_edit_op, take_channel_data, on_done_dialog
+from src.app.dialog.getters import (
+    get_op_menu_data,
+    get_channel_info_data,
+    get_add_channel_data,
+    get_add_bot_data,
+    get_bot_info_data
 )
-from src.app.states.admin.channel import ChannelsMenu, ChannelMenu, AddChannelSG
+from src.app.dialog.handlers import (
+    handle_channel_forward,
+    handle_channel_url_input,
+    handle_get_channel_info,
+    handle_delete_channel,
+    handle_toggle_channel_op_status,
+    handle_dialog_done,
+    handle_bot_username_input,
+    handle_bot_url_input,
+    handle_default_bot_url,
+    handle_bot_name_input,
+    handle_toggle_bot_op_status,
+    handle_get_bot_info,
+    handle_delete_bot
+)
+from src.app.states.admin.channel import OPMenu, ChannelMenu, AddChannelState, AddBotState, BotMenu
 
-op_dialog = Dialog(
+
+# Главное меню управления ОП (каналы и боты)
+op_management_dialog = Dialog(
     Window(
         Case(
             {
                 "start_msg": Format("Выберите действие"),
-                "not_found": Format("вы еще ничего не добавили")
+                "not_found": Format("Вы еще ничего не добавили")
             },
             selector="msg_type"
         ),
         Group(
+            Button(Const("🗂 Каналы"), id="channels_header", when="has_channels"),
             Select(
                 Format("{item[1]}"),
-                id="channels_buttons",
+                id="channels_list",
                 item_id_getter=itemgetter(0),
                 items="channel_data",
-                on_click=get_channel_info,
+                on_click=handle_get_channel_info,
+                when="has_channels"
             ),
             width=1
         ),
-        Start(Const("добавить канал"), id="add_channel", state=AddChannelSG.get_channel_data),
-        Button(Const("◄ назад"), id="back_to_admin_menu", on_click=on_done_dialog),
-        state=ChannelsMenu.menu,
-        getter=op_menu_getter
+        Group(
+            Button(Const("🤖 Боты"), id="bots_header", when="has_bots"),
+            Select(
+                Format("{item[0]}"),
+                id="bots_list",
+                item_id_getter=itemgetter(1),
+                items="bot_data",
+                on_click=handle_get_bot_info,
+                when="has_bots"
+            ),
+            width=1
+        ),
+        Row(
+            Start(Const("➕ Добавить канал"), id="add_channel_btn", state=AddChannelState.get_channel_data),
+            Start(Const("➕ Добавить бота"), id="add_bot_btn", state=AddBotState.get_bot_username),
+        ),
+        Button(Const("◄ Назад"), id="back_to_admin_menu", on_click=handle_dialog_done),
+        state=OPMenu.menu,
+        getter=get_op_menu_data
     ),
 )
 
+
+# Диалог добавления канала
 add_channel_dialog = Dialog(
     Window(
         Case(
             {
                 "start_msg": Const(
-                    "🔗 Чтобы добавить канал или группу, отправьте любой пост с канала и добавьте бота в канал или группу."
+                    "🔗 Чтобы добавить канал или группу, перешлите любой пост с канала и добавьте бота в канал."
                 ),
-                "not_forwarded": Const("отправьте пост с канала!"),
+                "not_forwarded": Const("❌ Отправьте пост с канала!"),
             },
             selector="msg_type",
         ),
-        MessageInput(func=take_channel_data, content_types=ContentType.ANY),
-        Start(Const("◄ назад"), id="op_menu", state=ChannelsMenu.menu),
-        state=AddChannelSG.get_channel_data,
-        getter=add_chanenl_getter,
+        MessageInput(func=handle_channel_forward, content_types=ContentType.ANY),
+        Start(Const("◄ Назад"), id="back_to_op_menu", state=OPMenu.menu),
+        state=AddChannelState.get_channel_data,
+        getter=get_add_channel_data,
     ),
     Window(
         Case(
             {
-                "start_msg": Const("оптправьте ссылку на канал"),
-                "error": Const("Произошла ошибка при добавлении канала!"),
-                "already_exists": Const("✖ Канал уже существует!"),
+                "start_msg": Const("🔗 Отправьте ссылку на канал"),
+                "error": Const("❌ Произошла ошибка при добавлении канала!"),
+                "already_exists": Const("⚠️ Канал уже существует!"),
             },
             selector="msg_type",
         ),
-        MessageInput(func=add_channel_input, content_types=ContentType.ANY),
-        Start(Const("◄ назад"), id="op_menu", state=ChannelsMenu.menu),
-        state=AddChannelSG.get_channel_link,
-        getter=add_chanenl_getter,
+        MessageInput(func=handle_channel_url_input, content_types=ContentType.ANY),
+        Start(Const("◄ Назад"), id="back_to_op_menu", state=OPMenu.menu),
+        state=AddChannelState.get_channel_link,
+        getter=get_add_channel_data,
     ),
 )
 
-channel_menu_dialog = Dialog(
+
+# Диалог управления каналом
+channel_management_dialog = Dialog(
     Window(
         Format("{channel_data}"),
         Group(
             Row(
-                SwitchTo(Const("✖ Удалить канал"), id="delete_channel", state=ChannelMenu.delite_channel),
-                Button(Format("{op_button}"), id="remove_from_op", on_click=on_edit_op),
+                SwitchTo(Const("🗑 Удалить канал"), id="delete_channel_btn", state=ChannelMenu.delete_channel),
+                Button(Format("{op_button}"), id="toggle_op_status_btn", on_click=handle_toggle_channel_op_status),
             ),
             Row(
-                Start(Const("◄ Назад"), id="back", state=ChannelsMenu.menu),
+                Start(Const("◄ Назад"), id="back_to_op_menu", state=OPMenu.menu),
             ),
         ),
         state=ChannelMenu.menu,
-        getter=channel_info_getter
+        getter=get_channel_info_data
     ),
     Window(
-        Const("Вы уверены, что хотите удалить канал?"),
+        Const("⚠️ Вы уверены, что хотите удалить канал?"),
         Row(
-            Start(Const("Нет"), id="back", state=ChannelMenu.menu),
-            Button(Const("Да"), id="delete", on_click=on_delete_channel)
+            Start(Const("❌ Нет"), id="cancel_delete", state=ChannelMenu.menu),
+            Button(Const("✅ Да"), id="confirm_delete", on_click=handle_delete_channel)
         ),
-        state=ChannelMenu.delite_channel
+        state=ChannelMenu.delete_channel
+    )
+)
+
+
+# Диалог добавления бота
+add_bot_dialog = Dialog(
+    Window(
+        Case(
+            {
+                "start_msg": Const("👤 Отправьте username бота (без @)"),
+                "error_format": Const("❌ Отправьте текстовое сообщение с username бота!"),
+                "already_exists": Const("⚠️ Бот с таким username уже существует!"),
+            },
+            selector="msg_type",
+        ),
+        MessageInput(func=handle_bot_username_input, content_types=ContentType.ANY),
+        Start(Const("◄ Назад"), id="back_to_op_menu", state=OPMenu.menu),
+        state=AddBotState.get_bot_username,
+        getter=get_add_bot_data,
+    ),
+    Window(
+        Case(
+            {
+                "start_msg": Const("🔗 Отправьте ссылку на бота"),
+                "error_format": Const("❌ Неправильный формат ссылки!"),
+            },
+            selector="msg_type",
+        ),
+        MessageInput(func=handle_bot_url_input, content_types=ContentType.ANY),
+        Button(Const("🔗 Использовать стандартную ссылку"), id="use_default_url", on_click=handle_default_bot_url),
+        Start(Const("◄ Назад"), id="back_to_op_menu", state=OPMenu.menu),
+        state=AddBotState.get_bot_link,
+        getter=get_add_bot_data,
+    ),
+    Window(
+        Case(
+            {
+                "start_msg": Const("📝 Отправьте отображаемое имя бота"),
+                "error_format": Const("❌ Отправьте текстовое сообщение!"),
+            },
+            selector="msg_type",
+        ),
+        MessageInput(func=handle_bot_name_input, content_types=ContentType.ANY),
+        Start(Const("◄ Назад"), id="back_to_op_menu", state=OPMenu.menu),
+        state=AddBotState.get_bot_name,
+        getter=get_add_bot_data,
+    )
+)
+
+
+# Диалог управления ботом
+bot_management_dialog = Dialog(
+    Window(
+        Format("{bot_data}"),
+        Group(
+            Row(
+                SwitchTo(Const("🗑 Удалить бота"), id="delete_bot_btn", state=BotMenu.delete_bot),
+                Button(Format("{op_button}"), id="toggle_op_status_btn", on_click=handle_toggle_bot_op_status),
+            ),
+            Row(
+                Start(Const("◄ Назад"), id="back_to_op_menu", state=OPMenu.menu),
+            ),
+        ),
+        state=BotMenu.menu,
+        getter=get_bot_info_data
+    ),
+    Window(
+        Const("⚠️ Вы уверены, что хотите удалить бота?"),
+        Row(
+            SwitchTo(Const("❌ Нет"), id="cancel_delete", state=BotMenu.menu),
+            Button(Const("✅ Да"), id="confirm_delete", on_click=handle_delete_bot)
+        ),
+        state=BotMenu.delete_bot
     )
 )

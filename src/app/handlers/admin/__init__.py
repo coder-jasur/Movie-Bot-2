@@ -1,7 +1,7 @@
 from aiogram import Router, F
 
 from src.app.core.config import Settings
-from src.app.dialog import add_channel_dialog
+from src.app.dialog.dialogs import add_channel_dialog, add_bot_dialog
 from src.app.handlers.admin.add_movie.add_movie import add_movie_router
 from src.app.handlers.admin.add_movie.feature_films import feature_films_router
 from src.app.handlers.admin.add_movie.mini_series import mini_series_router
@@ -31,4 +31,5 @@ def register_admin_rouetrs(router: Router, settings: Settings):
     admin_register_router.include_router(series_router)
 
     admin_register_router.include_router(add_channel_dialog)
+    admin_register_router.include_router(add_bot_dialog)
     router.include_router(admin_register_router)

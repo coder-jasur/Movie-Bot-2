@@ -478,41 +478,13 @@ start_menu = InlineKeyboardMarkup(
 )
 
 
-def mandatory_sub_kbd(bots_list: list, channels_list: list):
-    keyboard = InlineKeyboardBuilder()
-
-    if channels_list:
-        keyboard.row(InlineKeyboardButton(text="📥 канали", callback_data="some_call"))
-        for channel in channels_list:
-            keyboard.row(InlineKeyboardButton(
-                text=channel[1],
-                callback_data=ChannelsCD(
-                    channel_id=channel[0],
-                    actions="set_up_menu"
-                ).pack()
-            )
-            )
-
-    if bots_list:
-        keyboard.row(InlineKeyboardButton(text="📥 боты", callback_data="some_call"))
-        for bot in bots_list:
-            keyboard.row(InlineKeyboardButton(
-                text=bot[0],
-                callback_data=BotCD(
-                    bot_username=bot[1],
-                    actions="set_up_menu"
-                ).pack()
-            )
-            )
-
-    keyboard.row(InlineKeyboardButton(text="дабавить бот"))
-    keyboard.row(InlineKeyboardButton(text="дабавить канал"))
-
-    return keyboard.as_markup()
-
-
-def not_channels_button(channel_data):
+def not_channels_button(channel_data, bots_data):
     builder_button = InlineKeyboardBuilder()
+    for bot in bots_data:
+
+        builder_button.row(
+            InlineKeyboardButton(text=bot[0], url=bot[3])
+        )
     for channel in channel_data:
 
         builder_button.row(

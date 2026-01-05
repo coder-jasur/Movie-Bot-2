@@ -47,6 +47,7 @@ async def create_bots_table(conn: Connection) -> None:
             bot_name TEXT NOT NULL,
             bot_username TEXT NOT NULL,
             bot_status TEXT NOT NULL,
+            bot_url TEXT NOT NULL,
             created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
         )
     """

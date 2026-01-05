@@ -6,13 +6,13 @@ from aiogram_dialog import DialogManager
 from src.app.database.queries.bots import BotActions
 from src.app.database.queries.channels import ChannelActions
 from src.app.keyboards.callback_data import ChannelsCD, BotCD
-from src.app.states.admin.channel import ChannelsMenu
+from src.app.states.admin.channel import OPMenu
 
 mandatory_subs_router = Router()
 
 @mandatory_subs_router.callback_query(F.data == "mandatory_subscriptions")
 async def send_admin_menu(callback: CallbackQuery, dialog_manager: DialogManager):
-    await dialog_manager.start(ChannelsMenu.menu)
+    await dialog_manager.start(OPMenu.menu)
 
 
 @mandatory_subs_router.callback_query(ChannelsCD.filter())
